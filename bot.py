@@ -59,6 +59,7 @@ async def help(ctx):
     helpEmbed.add_field(name="!garf today", value="*Takes no arguments*\nDisplays the Garfield comic from today, in relation to US Eastern timezone.")
     helpEmbed.add_field(name="!garf random", value="*Takes no arguments*\nDisplays a random Garfield comic.")
     helpEmbed.set_image(url="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.d-FOOBt6822ipWg-NKW6TwHaEo%26pid%3DApi&f=1")
+    helpEmbed.set_footer(text="This bot pulls URLs from ucomics and has the user's client display them. Any connection error may be as a result of the user's connection to Discord, a hardware issue, or a ucomics site issue.")
     await ctx.send(embed=helpEmbed)
 
 @bot.command(pass_context=True, name="error")
