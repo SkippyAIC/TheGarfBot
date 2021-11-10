@@ -65,6 +65,7 @@ async def help(ctx):
 @bot.command(pass_context=True, name="error")
 @commands.is_owner()
 async def triggerError(ctx, *args):
+   
     ## Intentional NameError, can only be triggered by the bot owner.
     print(test)
     
