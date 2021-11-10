@@ -51,7 +51,6 @@ async def comic(ctx, *args):
     
     await ctx.send(embed=garfEmbed)
     
-    
 @bot.command(pass_context=True)
 async def help(ctx):
     
