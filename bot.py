@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 
-
 from discord.ext import commands
 import discord
 from datetime import datetime
