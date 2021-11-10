@@ -108,6 +108,5 @@ def garfDate(date):
         newNumber = zeroAdd(i)
         garfCompatDate.append(newNumber)
     return garfCompatDate
-    
 
 bot.run(apikey)
