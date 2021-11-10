@@ -52,7 +52,7 @@ async def comic(ctx, *args):
     await ctx.send(embed=garfEmbed)
     
 @bot.command(pass_context=True)
-async def help(ctx):
+async def help(ctx): ## !gahelp
     
     helpEmbed = discord.Embed(title="GarfBot Help", color=0xFCAA14)
     helpEmbed.add_field(name="!garf", value="*Takes one date*\nDisplays a Garfield comic from a certain date.\n**For Example:**\n``!garf 1995 07 29``")
