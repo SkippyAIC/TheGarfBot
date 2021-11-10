@@ -33,11 +33,7 @@ from os import getenv
 
 
 
-
-
 ## The bot natively runs in US Eastern timezone, if you are in another timezone it is heavily recommended to install the pytz library and set it to US Eastern.
-
-
 
 
 
