@@ -96,6 +96,7 @@ async def on_command_error(ctx, e):
     await ctx.send(embed=embed)
     
 def garfDate(date):
+   
     ## Converts date tuple/list to string to be converted to datetime object to help discern year, month, and day.
     dateString = "".join(i for i in date)
     date = datetime.strptime(dateString, "%Y%m%d")
