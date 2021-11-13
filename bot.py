@@ -22,8 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-## REPLIT SET THIS PROJECT TO BASH *deafening screaming :)*
-
 
 from discord.ext import commands
 import discord
