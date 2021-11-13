@@ -23,27 +23,23 @@ SOFTWARE.
 """
 
 
+## REPLIT SET THIS PROJECT TO BASH *deafening screaming :)*
+
+
 from discord.ext import commands
 import discord
-from datetime import datetime
+from discord_slash import SlashCommand, SlashContext
 from garf import garf
+from datetime import datetime
 from random import choice, randint
 from os import getenv
 import pytz
-from keepAlive import keep_alive
-
-
-
-
-
-## The bot natively runs in US Eastern timezone, if you are in another timezone it is heavily recommended to install the pytz library and set it to US Eastern.
-
-
-
+##from keepAlive import keep_alive
 
 
 apikey = getenv("apikey")
-bot = commands.Bot(command_prefix="!ga", help_command=None)
+bot = discord.Client(intents=discord.Intents.default())
+slash = SlashCommand(bot, sync_commands=True)
 footers = ["Feed me.", "Paws Inc., property of the SCP Foundation", "I'm not overweight, I'm undertall.", 'Diet is "die" with a "t".', "Anybody can exercise... But this kind of lethargy takes real discipline."]
 timez = pytz.timezone("America/New_York")
 
@@ -52,20 +48,25 @@ async def on_ready():
     ## Changes bot activity
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="The Garfield Show! !gahelp"))
 
-@bot.command(pass_context=True, name="rf")
-async def comic(ctx, *args):
-
-    ## This allows for filtering of a tuple of 3 non-numeric characters (- / \) for maximum compatibility
-
-    if len(args) == 1 and args[0] not in ("random", "today", "tomorrow"):
-        for i in ("-", "/", "\\"):
-          newArgs = args[0].split(i)
+@slash.slash(name="garf", description="Grab a Garfield comic from any date")
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def comic(ctx, date):
+    
+    await ctx.defer()
+    
+    ## This allows for filtering of a string into a list by 3 non-numeric characters (whitespace, - / \) for maximum compatibility
+    if date.lower() not in ("today", "random", "tomorrow"):
+        for i in (" ", "-", "/", "\\"):
+          newArgs = date.split(i)
           if len(newArgs) != 1:
-            args = newArgs
+            date = newArgs
+            break
           elif i == "\\":
             raise Exception("InvalidDateFormat")
           else:
             continue
+    else:
+        date = [date]
 
     currentDate = datetime.now(tz=timez)
     
@@ -79,21 +80,21 @@ async def comic(ctx, *args):
     
     ## If "today" is in given arguments, override with datetime.today() (or if tomorrow is in there, send THE COKE.)
 
-    for i in args:
+    for i in date:
         if i.lower() == "today":
             ## Gets Garfield comic from current date, should be in US Eastern timezone, ideally.
-            args = (str(currentDate.year), str(currentDate.month), str(currentDate.day))
+            date = (str(currentDate.year), str(currentDate.month), str(currentDate.day))
         elif i.lower() == "random":
             ## Gets a random date from 1979 to 2020, a lot of limits here to ensure a proper date is picked without having to do extra processing.
             randomYear, randomMonth, randomDay = str(randint(1979, 2020)), str(randint(1, 12)), str(randint(1, 28))
-            args = (randomYear, randomMonth, randomDay)
+            date = (randomYear, randomMonth, randomDay)
         elif i.lower() == "tomorrow":
             await ctx.send(r"https://cdn.discordapp.com/attachments/290667374468661249/891899409841926164/E_2j7DSVEAcccsa.png")
             return
         
     ## Normalizes list and sends to garf.py.
 
-    comicDate = garfDate(args)
+    comicDate = garfDate(date)
     garfComic = garf(comicDate)
     
     ## Creates embed for the comic
@@ -106,34 +107,29 @@ async def comic(ctx, *args):
     
     await ctx.send(embed=garfEmbed)
     
-@bot.command(pass_context=True)
+@slash.slash(name="help", description="TheGarfBot Help")
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def help(ctx):
-    helpEmbed = discord.Embed(title="GarfBot Help", color=0xFCAA14)
-    helpEmbed.add_field(name="!garf", value="*Takes one date*\nDisplays a Garfield comic from a certain date.\n**For Example:**\n``!garf 1995 07 29``")
-    helpEmbed.add_field(name="!garf today", value="*Takes no arguments*\nDisplays the Garfield comic from today, in relation to US Eastern timezone.")
-    helpEmbed.add_field(name="!garf random", value="*Takes no arguments*\nDisplays a random Garfield comic.")
+    helpEmbed = discord.Embed(title="TheGarfBot Help", color=0xFCAA14)
+    helpEmbed.add_field(name="/garf", value="*Takes one date*\nDisplays a Garfield comic from a certain date.\n**For Example:**\n``/garf 1995 07 29``")
+    helpEmbed.add_field(name="/garf today", value="*Takes no arguments*\nDisplays the Garfield comic from today, in relation to US Eastern timezone.")
+    helpEmbed.add_field(name="/garf random", value="*Takes no arguments*\nDisplays a random Garfield comic.")
     helpEmbed.set_image(url="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.d-FOOBt6822ipWg-NKW6TwHaEo%26pid%3DApi&f=1")
-    helpEmbed.set_footer(text="Created by Skippy.aic. Licensed under the MIT License\nThis bot pulls URLs from ucomics and has the user's client display them. Any connection error may be as a result of the user's connection to Discord, a hardware issue, or a ucomics site issue.")
+    helpEmbed.set_footer(text="Created by Skippy.aic. Licensed under the MIT License\nThis bot pulls URLs from ucomics and has the user's client display them. Any embed error may be as a result of the user's connection to Discord or a ucomics site issue.")
     await ctx.send(embed=helpEmbed)
-
-@bot.command(pass_context=True, name="error")
-@commands.is_owner()
-async def triggerError(ctx, *args):
-    ## Intentional NameError, can only be triggered by the bot owner.
-    print(test)
     
 @bot.event
-async def on_command_error(ctx, e):
-    
-    ## Discord.py does not give the original Exception object, so it must be retrieved. Also, @commands.is_owner() returns the Exception "NotOwner", which does not have a .original property.
-    ## If a user attempts to use an owner-only command, an AttributeError Exception will occur. This is normal, and can be silenced with an if statement or a try/except.
-    exception = e.original
-    
+async def on_slash_command_error(ctx, e):
+
     ## Custom exceptions like InvalidDateFormat and InvalidDate do not derive from BaseException, so the Exception name would be stored in Exception.args. Otherwise, the name would be stored in Exception.__class__.__name__.
-    exceptionName = exception.__class__.__name__
-    exceptionCause = " ".join(i for i in exception.args)
+    exceptionName = e.__class__.__name__
+    exceptionCause = " ".join(i for i in e.args)
     
-    if "InvalidDateFormat" in exceptionCause:
+    if isinstance(e, commands.CommandOnCooldown):
+        title = "You are on cooldown!"
+        desc = "Hold up! You gotta wait **{}** more seconds before you can use another command.".format(int(e.retry_after))
+        color = 0xFCAA14
+    elif "InvalidDateFormat" in exceptionCause:
         title = "Invalid Date Format"
         desc = "You entered a date in an invalid format. Make sure to type YEAR-MONTH-DAY\n**For Example:**```!garf 1995 07 29\n!garf 1995-07-29```\nfor July 29th, 1995."
         color = 0xFFFF00
@@ -166,5 +162,5 @@ def garfDate(date):
         garfCompatDate.append(newNumber)
     return garfCompatDate
     
-keep_alive()
+##keep_alive()
 bot.run(apikey)
