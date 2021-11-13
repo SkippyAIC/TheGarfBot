@@ -2,7 +2,6 @@
 MIT License
 
 Copyright (c) 2021 SkippyAIC
-Copyright (c) 2015-present Rapptz - discord.py
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+## REPLIT SET THIS PROJECT TO BASH *deafening screaming :)*
+
+
 from discord.ext import commands
 import discord
 from datetime import datetime
 from garf import garf
 from random import choice, randint
 from os import getenv
+import pytz
+from keepAlive import keep_alive
 
 
 
@@ -38,25 +42,47 @@ from os import getenv
 
 
 
+
 apikey = getenv("apikey")
 bot = commands.Bot(command_prefix="!ga", help_command=None)
 footers = ["Feed me.", "Paws Inc., property of the SCP Foundation", "I'm not overweight, I'm undertall.", 'Diet is "die" with a "t".', "Anybody can exercise... But this kind of lethargy takes real discipline."]
+timez = pytz.timezone("America/New_York")
+
+@bot.event
+async def on_ready():
+    ## Changes bot activity
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="The Garfield Show! !gahelp"))
 
 @bot.command(pass_context=True, name="rf")
 async def comic(ctx, *args):
+
+    ## This allows for filtering of a tuple of 3 non-numeric characters (- / \) for maximum compatibility
+
+    if len(args) == 1 and args[0] not in ("random", "today", "tomorrow"):
+        for i in ("-", "/", "\\"):
+          newArgs = args[0].split(i)
+          if len(newArgs) != 1:
+            args = newArgs
+          elif i == "\\":
+            raise Exception("InvalidDateFormat")
+          else:
+            continue
+
+    currentDate = datetime.now(tz=timez)
     
     ## Determines Monday footer depending on whatever local timezone this script is being run in.
+
     activeFooters = footers
-    if datetime.now().weekday() == 0:
+    if currentDate.weekday() == 0:
         activeFooters.append("Ugh... It's Monday...")
     else:
         activeFooters.append("I'm in a good mood... It's not Monday.")
     
     ## If "today" is in given arguments, override with datetime.today() (or if tomorrow is in there, send THE COKE.)
+
     for i in args:
         if i.lower() == "today":
             ## Gets Garfield comic from current date, should be in US Eastern timezone, ideally.
-            currentDate = datetime.today()
             args = (str(currentDate.year), str(currentDate.month), str(currentDate.day))
         elif i.lower() == "random":
             ## Gets a random date from 1979 to 2020, a lot of limits here to ensure a proper date is picked without having to do extra processing.
@@ -67,9 +93,12 @@ async def comic(ctx, *args):
             return
         
     ## Normalizes list and sends to garf.py.
+
     comicDate = garfDate(args)
     garfComic = garf(comicDate)
     
+    ## Creates embed for the comic
+
     garfEmbed = discord.Embed(title="Garfield Comic on {}".format(garfComic.fullDate), url=garfComic.url, color=0xFCAA14)
     embedFooter = choice(activeFooters)
     
@@ -78,16 +107,14 @@ async def comic(ctx, *args):
     
     await ctx.send(embed=garfEmbed)
     
-    
 @bot.command(pass_context=True)
 async def help(ctx):
-    
     helpEmbed = discord.Embed(title="GarfBot Help", color=0xFCAA14)
     helpEmbed.add_field(name="!garf", value="*Takes one date*\nDisplays a Garfield comic from a certain date.\n**For Example:**\n``!garf 1995 07 29``")
     helpEmbed.add_field(name="!garf today", value="*Takes no arguments*\nDisplays the Garfield comic from today, in relation to US Eastern timezone.")
     helpEmbed.add_field(name="!garf random", value="*Takes no arguments*\nDisplays a random Garfield comic.")
     helpEmbed.set_image(url="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.d-FOOBt6822ipWg-NKW6TwHaEo%26pid%3DApi&f=1")
-    helpEmbed.set_footer(text="This bot pulls URLs from ucomics and has the user's client display them. Any connection error may be as a result of the user's connection to Discord, a hardware issue, or a ucomics site issue.")
+    helpEmbed.set_footer(text="Created by Skippy.aic. Licensed under the MIT License\nThis bot pulls URLs from ucomics and has the user's client display them. Any connection error may be as a result of the user's connection to Discord, a hardware issue, or a ucomics site issue.")
     await ctx.send(embed=helpEmbed)
 
 @bot.command(pass_context=True, name="error")
@@ -100,7 +127,7 @@ async def triggerError(ctx, *args):
 async def on_command_error(ctx, e):
     
     ## Discord.py does not give the original Exception object, so it must be retrieved. Also, @commands.is_owner() returns the Exception "NotOwner", which does not have a .original property.
-    ## If a user attempts to use an owner-only command, an AttributeError Exception will occur. This is normal, and can be silenced with an if statement.
+    ## If a user attempts to use an owner-only command, an AttributeError Exception will occur. This is normal, and can be silenced with an if statement or a try/except.
     exception = e.original
     
     ## Custom exceptions like InvalidDateFormat and InvalidDate do not derive from BaseException, so the Exception name would be stored in Exception.args. Otherwise, the name would be stored in Exception.__class__.__name__.
@@ -126,6 +153,7 @@ async def on_command_error(ctx, e):
 def garfDate(date):
     ## Converts date tuple/list to string to be converted to datetime object to help discern year, month, and day.
     dateString = "".join(i for i in date if i.isnumeric())
+    print(date)
     try:
         date = datetime.strptime(dateString, "%Y%m%d")
     except ValueError:
@@ -139,5 +167,5 @@ def garfDate(date):
         garfCompatDate.append(newNumber)
     return garfCompatDate
     
-
+keep_alive()
 bot.run(apikey)
